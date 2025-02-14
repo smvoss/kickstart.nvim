@@ -15,7 +15,7 @@
 ========         `"")----------------(""`   ___________      ========
 ========        /::::::::::|  |::::::::::\  \ no mouse \     ========
 ========       /:::========|  |==hjkl==:::\  \ required \    ========
-========      '""""""""""""'  '""""""""""""'  '""""""""""'   ========
+========      '""""""""""""'  '""""""""""""'  '""""""""""'   =======e
 ========                                                     ========
 =====================================================================
 =====================================================================
@@ -90,8 +90,24 @@ P.S. You can delete this when you're done too. It's your config now! :)
 vim.g.mapleader = ' '
 vim.g.maplocalleader = ' '
 
+-- Enable spellcheck
+vim.opt.spell = true
+vim.opt.spelllang = 'en_us'
+
 -- Set to true if you have a Nerd Font installed and selected in the terminal
-vim.g.have_nerd_font = false
+vim.g.have_nerd_font = true
+
+-- TODO: not sure why this has to be done in global..
+vim.g.rustaceanvim = {
+  server = {
+    cmd = { "/local/home/smvoss/.toolbox/bin/rust-analyzer" },
+    default_settings = {
+      ['rust-analyzer'] = {
+        cmd = { "/local/home/smvoss/.toolbox/bin/rust-analyzer" },
+      },
+    },
+  },
+}
 
 -- [[ Setting options ]]
 -- See `:help vim.opt`
@@ -189,10 +205,17 @@ vim.keymap.set('t', '<Esc><Esc>', '<C-\\><C-n>', { desc = 'Exit terminal mode' }
 --  Use CTRL+<hjkl> to switch between windows
 --
 --  See `:help wincmd` for a list of all window commands
-vim.keymap.set('n', '<C-h>', '<C-w><C-h>', { desc = 'Move focus to the left window' })
-vim.keymap.set('n', '<C-l>', '<C-w><C-l>', { desc = 'Move focus to the right window' })
-vim.keymap.set('n', '<C-j>', '<C-w><C-j>', { desc = 'Move focus to the lower window' })
-vim.keymap.set('n', '<C-k>', '<C-w><C-k>', { desc = 'Move focus to the upper window' })
+vim.keymap.set('n', '<A-h>', '<C-w><C-h>', { desc = 'Move focus to the left window' })
+vim.keymap.set('n', '<A-l>', '<C-w><C-l>', { desc = 'Move focus to the right window' })
+vim.keymap.set('n', '<A-j>', '<C-w><C-j>', { desc = 'Move focus to the lower window' })
+vim.keymap.set('n', '<A-k>', '<C-w><C-k>', { desc = 'Move focus to the upper window' })
+
+-- Tab Switching
+vim.keymap.set('n', '{', 'gt', { desc = 'Select previous tab' })
+vim.keymap.set('n', '}', 'gT', { desc = 'Select next tab' })
+
+-- Remap gcc to ctrl+/ to mimic other popular editors toggle comment keybind
+-- vim.keymap.set('i', '<C-/>', 'gcc', { desc = 'Move focus to the lower window' })
 
 -- [[ Basic Autocommands ]]
 --  See `:help lua-guide-autocommands`
@@ -268,6 +291,12 @@ require('lazy').setup({
         changedelete = { text = '~' },
       },
     },
+  },
+  {'akinsho/toggleterm.nvim', version = "*", config = function()
+    require("toggleterm").setup {
+      open_mapping = [[<c-\>]]
+    }
+    end
   },
 
   -- NOTE: Plugins can also be configured to run Lua code when they are loaded.
@@ -466,6 +495,24 @@ require('lazy').setup({
       },
     },
   },
+  { 'Bilal2453/luvit-meta', lazy = true },
+
+  -- Rust configuration items 
+  {
+    'mrcjkb/rustaceanvim',
+    version = '^5', -- Recommended
+    lazy = false, -- This plugin is already lazy
+    -- opts = {
+      -- server = {
+        -- default_settings = {
+          -- ["rust-analyzer"] = {
+            -- cmd = { "/local/home/smvoss/.toolbox/bin/rust-analyzer" },
+          -- },
+        -- },
+      -- },
+    -- },
+  },
+  { 'mfussenegger/nvim-dap' },
   {
     -- Main LSP Configuration
     'neovim/nvim-lspconfig',
@@ -663,9 +710,9 @@ require('lazy').setup({
       --  - settings (table): Override the default settings passed when initializing the server.
       --        For example, to see the options for `lua_ls`, you could go to: https://luals.github.io/wiki/settings/
       local servers = {
-        -- clangd = {},
+       --  clangd = {},
         -- gopls = {},
-        -- pyright = {},
+        pyright = {},
         -- rust_analyzer = {},
         -- ... etc. See `:help lspconfig-all` for a list of all the pre-configured LSPs
         --
@@ -723,8 +770,16 @@ require('lazy').setup({
             server.capabilities = vim.tbl_deep_extend('force', {}, capabilities, server.capabilities or {})
             require('lspconfig')[server_name].setup(server)
           end,
+          rust_analyzer = function() end,
         },
       }
+     -- require('mason-lspconfig').setup_handlers({
+     --   ["rust_analyzer"] = function()
+     --     require('lspconfig').rust_analyzer.setup({
+     --       cmd = { "/local/home/smvoss/.toolbox/bin/rust-analyzer" }
+     --     })
+     --   end,
+     -- })
     end,
   },
 
@@ -828,18 +883,18 @@ require('lazy').setup({
         -- No, but seriously. Please read `:help ins-completion`, it is really good!
         mapping = cmp.mapping.preset.insert {
           -- Select the [n]ext item
-          ['<C-n>'] = cmp.mapping.select_next_item(),
+          ['<C-j>'] = cmp.mapping.select_next_item(),
           -- Select the [p]revious item
-          ['<C-p>'] = cmp.mapping.select_prev_item(),
+          ['<C-k>'] = cmp.mapping.select_prev_item(),
 
           -- Scroll the documentation window [b]ack / [f]orward
-          ['<C-b>'] = cmp.mapping.scroll_docs(-4),
-          ['<C-f>'] = cmp.mapping.scroll_docs(4),
+          ['<C-K>'] = cmp.mapping.scroll_docs(-4),
+          ['<C-J>'] = cmp.mapping.scroll_docs(4),
 
           -- Accept ([y]es) the completion.
           --  This will auto-import if your LSP supports it.
           --  This will expand snippets if the LSP sent a snippet.
-          ['<C-y>'] = cmp.mapping.confirm { select = true },
+          ['<tab>'] = cmp.mapping.confirm { select = true },
 
           -- If you prefer more traditional completion keymaps,
           -- you can uncomment the following lines
@@ -951,6 +1006,9 @@ require('lazy').setup({
       --  Check out: https://github.com/echasnovski/mini.nvim
     end,
   },
+  {
+    'rrethy/vim-illuminate',
+  },
   { -- Highlight, edit, and navigate code
     'nvim-treesitter/nvim-treesitter',
     build = ':TSUpdate',
@@ -990,7 +1048,19 @@ require('lazy').setup({
   -- require 'kickstart.plugins.indent_line',
   -- require 'kickstart.plugins.lint',
   -- require 'kickstart.plugins.autopairs',
-  -- require 'kickstart.plugins.neo-tree',
+  require 'kickstart.plugins.neo-tree',
+  --require("kickstart.plugins.neo-tree").setup({
+  --  event_handlers = {
+  --    {
+  --      event = "file_open_requested",
+  --      handler = function()
+  --        -- auto close
+  --        -- vim.cmd("Neotree close")
+  --        require("neo-tree.command").execute({ action = "close" })
+  --      end
+  --    },
+  --  }
+  --}),
   -- require 'kickstart.plugins.gitsigns', -- adds gitsigns recommend keymaps
 
   -- NOTE: The import below can automatically add your own plugins, configuration, etc from `lua/custom/plugins/*.lua`
@@ -998,6 +1068,7 @@ require('lazy').setup({
   --
   --  Uncomment the following line and add your plugins to `lua/custom/plugins/*.lua` to get going.
   -- { import = 'custom.plugins' },
+
   --
   -- For additional information with loading, sourcing and examples see `:help lazy.nvim-🔌-plugin-spec`
   -- Or use telescope!
@@ -1027,3 +1098,24 @@ require('lazy').setup({
 
 -- The line beneath this is called `modeline`. See `:help modeline`
 -- vim: ts=2 sts=2 sw=2 et
+--
+
+-- Amazon Language Server for Config (Brazil)
+local lspconfig = require 'lspconfig'
+local configs = require 'lspconfig.configs'
+
+-- Check if the config is already defined (useful when reloading this file)
+if not configs.barium then
+    configs.barium = {
+        default_config = {
+            cmd = {'barium'};
+            filetypes = {'brazil-config'};
+            root_dir = function(fname)
+                return lspconfig.util.find_git_ancestor(fname)
+            end;
+            settings = {};
+        };
+    }
+end
+
+lspconfig.barium.setup {}

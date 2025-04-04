@@ -193,7 +193,24 @@ vim.keymap.set('n', '<leader>q', vim.diagnostic.setloclist, { desc = 'Open diagn
 --
 -- NOTE: This won't work in all terminal emulators/tmux/etc. Try your own mapping
 -- or just use <C-\><C-n> to exit terminal mode
-vim.keymap.set('t', '<Esc><Esc>', '<C-\\><C-n>', { desc = 'Exit terminal mode' })
+-- vim.keymap.set('t', '<Esc><Esc>', '<C-\\><C-n>', { desc = 'Exit terminal mode' })
+vim.keymap.set('t', '<Esc>', '<C-\\><C-n>', { desc = 'Exit terminal mode' })
+vim.keymap.set({'t', 'n'}, '<C-n>',
+  function()
+    local window = vim.api.nvim_get_current_win()
+    local height = vim.api.nvim_win_get_height(window)
+
+    if height ~= 20 then
+      height = 20
+    else
+      height = 100
+    end
+
+    vim.api.nvim_win_set_height(window, height)
+  end
+)
+
+vim.g.terminal_height = 20
 
 -- TIP: Disable arrow keys in normal mode
 -- vim.keymap.set('n', '<left>', '<cmd>echo "Use h to move!!"<CR>')
@@ -294,7 +311,8 @@ require('lazy').setup({
   },
   {'akinsho/toggleterm.nvim', version = "*", config = function()
     require("toggleterm").setup {
-      open_mapping = [[<c-\>]]
+      open_mapping = [[<c-\>]],
+      size = 20
     }
     end
   },

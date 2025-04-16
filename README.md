@@ -1,5 +1,29 @@
 # kickstart.nvim
 
+## Custom Plugins
+
+Custom plugins in `lua/custom/plugins/`:
+
+| File | Description |
+| :--- | :---------- |
+| `term.lua` | Toggleterm with dual terminal support (`Ctrl+\` and `Alt+\`) |
+| `rustaceanvim.lua` | Rust LSP via rustaceanvim with inlay hints |
+| `python_format.lua` | Python formatting (black/isort) with virtualenv detection |
+| `python_lsp.lua` | Pyright config with virtualenv detection |
+| `typescript.lua` | TypeScript/JavaScript LSP (ts_ls) |
+
+### External Config
+
+Machine-specific settings live in `~/.config/nvim-local/` (outside this repo).
+
+The `local_loader.lua` plugin automatically loads:
+- Any plugin specs from `~/.config/nvim-local/plugins/*.lua`
+- Standalone configs like LSP setups
+
+Configurable via external files (no local plugin needed):
+- `rust.lua` - `{ rust_analyzer_path = "/path/to/rust-analyzer" }`
+- `debug.lua` - `{ python = {...}, debugpy_python = "/path/to/python" }`
+
 ## Introduction
 
 A starting point for Neovim that is:

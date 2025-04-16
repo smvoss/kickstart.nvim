@@ -97,17 +97,7 @@ vim.opt.spelllang = 'en_us'
 -- Set to true if you have a Nerd Font installed and selected in the terminal
 vim.g.have_nerd_font = true
 
--- TODO: not sure why this has to be done in global..
-vim.g.rustaceanvim = {
-  server = {
-    cmd = { "/local/home/smvoss/.toolbox/bin/rust-analyzer" },
-    default_settings = {
-      ['rust-analyzer'] = {
-        cmd = { "/local/home/smvoss/.toolbox/bin/rust-analyzer" },
-      },
-    },
-  },
-}
+-- Rustaceanvim configuration moved to lua/custom/plugins/rustaceanvim.lua
 
 -- [[ Setting options ]]
 -- See `:help vim.opt`
@@ -157,6 +147,14 @@ vim.opt.timeoutlen = 300
 vim.opt.splitright = true
 vim.opt.splitbelow = true
 
+-- Auto refresh files when they change on disk
+--vim.opt.autoread = true
+---- Create an autocommand to check for file changes more frequently
+--vim.api.nvim_create_autocmd({ "BufEnter", "CursorHold", "CursorHoldI", "FocusGained" }, {
+--  command = "if mode() != 'c' | checktime | endif",
+--  pattern = { "*" },
+--})
+
 -- Sets how neovim will display certain whitespace characters in the editor.
 --  See `:help 'list'`
 --  and `:help 'listchars'`
@@ -187,30 +185,9 @@ vim.keymap.set('n', '<Esc>', '<cmd>nohlsearch<CR>')
 -- Diagnostic keymaps
 vim.keymap.set('n', '<leader>q', vim.diagnostic.setloclist, { desc = 'Open diagnostic [Q]uickfix list' })
 
--- Exit terminal mode in the builtin terminal with a shortcut that is a bit easier
--- for people to discover. Otherwise, you normally need to press <C-\><C-n>, which
--- is not what someone will guess without a bit more experience.
---
--- NOTE: This won't work in all terminal emulators/tmux/etc. Try your own mapping
--- or just use <C-\><C-n> to exit terminal mode
--- vim.keymap.set('t', '<Esc><Esc>', '<C-\\><C-n>', { desc = 'Exit terminal mode' })
-vim.keymap.set('t', '<Esc>', '<C-\\><C-n>', { desc = 'Exit terminal mode' })
-vim.keymap.set({'t', 'n'}, '<C-n>',
-  function()
-    local window = vim.api.nvim_get_current_win()
-    local height = vim.api.nvim_win_get_height(window)
+-- Terminal keymaps and settings moved to lua/custom/plugins/term.lua
 
-    if height ~= 20 then
-      height = 20
-    else
-      height = 100
-    end
-
-    vim.api.nvim_win_set_height(window, height)
-  end
-)
-
-vim.g.terminal_height = 20
+-- Terminal height setting moved to lua/custom/plugins/term.lua
 
 -- TIP: Disable arrow keys in normal mode
 -- vim.keymap.set('n', '<left>', '<cmd>echo "Use h to move!!"<CR>')
@@ -309,13 +286,7 @@ require('lazy').setup({
       },
     },
   },
-  {'akinsho/toggleterm.nvim', version = "*", config = function()
-    require("toggleterm").setup {
-      open_mapping = [[<c-\>]],
-      size = 20
-    }
-    end
-  },
+  -- Terminal configuration moved to lua/custom/plugins/term.lua
 
   -- NOTE: Plugins can also be configured to run Lua code when they are loaded.
   --
@@ -515,22 +486,7 @@ require('lazy').setup({
   },
   { 'Bilal2453/luvit-meta', lazy = true },
 
-  -- Rust configuration items 
-  {
-    'mrcjkb/rustaceanvim',
-    version = '^5', -- Recommended
-    lazy = false, -- This plugin is already lazy
-    -- opts = {
-      -- server = {
-        -- default_settings = {
-          -- ["rust-analyzer"] = {
-            -- cmd = { "/local/home/smvoss/.toolbox/bin/rust-analyzer" },
-          -- },
-        -- },
-      -- },
-    -- },
-  },
-  { 'mfussenegger/nvim-dap' },
+  -- Rust configuration moved to lua/custom/plugins/rustaceanvim.lua
   {
     -- Main LSP Configuration
     'neovim/nvim-lspconfig',
@@ -728,7 +684,10 @@ require('lazy').setup({
       --  - settings (table): Override the default settings passed when initializing the server.
       --        For example, to see the options for `lua_ls`, you could go to: https://luals.github.io/wiki/settings/
       local servers = {
-       --  clangd = {},
+        clangd = {
+          -- disabling some defaults, notably protobuf as the auto-format does not match our current standards
+          filetypes = { "c", "cpp" }
+        },
         -- gopls = {},
         pyright = {},
         -- rust_analyzer = {},
@@ -738,7 +697,7 @@ require('lazy').setup({
         --    https://github.com/pmizio/typescript-tools.nvim
         --
         -- But for many setups, the LSP (`ts_ls`) will work just fine
-        -- ts_ls = {},
+        ts_ls = {},
         --
 
         lua_ls = {
@@ -776,6 +735,11 @@ require('lazy').setup({
       })
       require('mason-tool-installer').setup { ensure_installed = ensure_installed }
 
+      -- Explicitly disable rust-analyzer to prevent automatic startup
+      require('lspconfig').rust_analyzer.setup({
+        autostart = false,
+      })
+      
       require('mason-lspconfig').setup {
         ensure_installed = {}, -- explicitly set to an empty table (Kickstart populates installs via mason-tool-installer)
         automatic_installation = false,
@@ -791,13 +755,6 @@ require('lazy').setup({
           rust_analyzer = function() end,
         },
       }
-     -- require('mason-lspconfig').setup_handlers({
-     --   ["rust_analyzer"] = function()
-     --     require('lspconfig').rust_analyzer.setup({
-     --       cmd = { "/local/home/smvoss/.toolbox/bin/rust-analyzer" }
-     --     })
-     --   end,
-     -- })
     end,
   },
 
@@ -836,7 +793,7 @@ require('lazy').setup({
       formatters_by_ft = {
         lua = { 'stylua' },
         -- Conform can also run multiple formatters sequentially
-        -- python = { "isort", "black" },
+        python = { "isort", "black" },
         --
         -- You can use 'stop_after_first' to run the first available formatter from the list
         -- javascript = { "prettierd", "prettier", stop_after_first = true },
@@ -1037,7 +994,13 @@ require('lazy').setup({
       -- Autoinstall languages that are not installed
       auto_install = true,
       highlight = {
-        enable = true,
+        enable = false,
+        -- Disable for large files (Linux Kernel Headers currently hang)
+        disable = function(lang, bufnr) --
+          -- https://www.reddit.com/r/neovim/comments/15ct9a0/comment/jtzap0r
+          -- Extend this to other languages by adding `lang == "x"` where x is the language
+          return vim.api.nvim_buf_line_count(bufnr) > 50000 and (lang == "cpp" or lang == "c")
+        end,
         -- Some languages depend on vim's regex highlighting system (such as Ruby) for indent rules.
         --  If you are experiencing weird indenting issues, add the language to
         --  the list of additional_vim_regex_highlighting and disabled languages for indent.
@@ -1062,7 +1025,7 @@ require('lazy').setup({
   --  Here are some example plugins that I've included in the Kickstart repository.
   --  Uncomment any of the lines below to enable them (you will need to restart nvim).
   --
-  -- require 'kickstart.plugins.debug',
+  require 'kickstart.plugins.debug',
   -- require 'kickstart.plugins.indent_line',
   -- require 'kickstart.plugins.lint',
   -- require 'kickstart.plugins.autopairs',
@@ -1085,7 +1048,8 @@ require('lazy').setup({
   --    This is the easiest way to modularize your config.
   --
   --  Uncomment the following line and add your plugins to `lua/custom/plugins/*.lua` to get going.
-  -- { import = 'custom.plugins' },
+  { import = 'custom.plugins' },
+
 
   --
   -- For additional information with loading, sourcing and examples see `:help lazy.nvim-🔌-plugin-spec`
@@ -1116,24 +1080,4 @@ require('lazy').setup({
 
 -- The line beneath this is called `modeline`. See `:help modeline`
 -- vim: ts=2 sts=2 sw=2 et
---
-
--- Amazon Language Server for Config (Brazil)
-local lspconfig = require 'lspconfig'
-local configs = require 'lspconfig.configs'
-
--- Check if the config is already defined (useful when reloading this file)
-if not configs.barium then
-    configs.barium = {
-        default_config = {
-            cmd = {'barium'};
-            filetypes = {'brazil-config'};
-            root_dir = function(fname)
-                return lspconfig.util.find_git_ancestor(fname)
-            end;
-            settings = {};
-        };
-    }
-end
-
-lspconfig.barium.setup {}
+-- vim: ts=2 sts=2 sw=2 et

@@ -23,6 +23,7 @@ return {
 
     -- Add your own debuggers here
     'leoluz/nvim-dap-go',
+    'mfussenegger/nvim-dap-python',
   },
   keys = {
     -- Basic debugging keymaps, feel free to change to your liking!
@@ -135,6 +136,20 @@ return {
     dap.listeners.after.event_initialized['dapui_config'] = dapui.open
     dap.listeners.before.event_terminated['dapui_config'] = dapui.close
     dap.listeners.before.event_exited['dapui_config'] = dapui.close
+
+    -- Load debug configurations from external config if available
+    local debug_config_path = vim.fn.expand('~/.config/nvim-local/debug.lua')
+    if vim.fn.filereadable(debug_config_path) == 1 then
+      local ok, cfg = pcall(dofile, debug_config_path)
+      if ok and cfg then
+        if cfg.python then
+          dap.configurations.python = cfg.python
+        end
+        if cfg.debugpy_python then
+          require('dap-python').setup(cfg.debugpy_python)
+        end
+      end
+    end
 
     -- Install golang specific config
     require('dap-go').setup {
